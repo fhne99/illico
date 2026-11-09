@@ -1,6 +1,6 @@
 {
-  "name": "frontend",
-  "short_name": "frontend",
+  "name": "Illico",
+  "short_name": "Illico",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",

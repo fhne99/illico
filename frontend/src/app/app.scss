@@ -1,0 +1,41 @@
+// Couleurs issues du thème Angular Material (Azure/Blue) : contrastes conformes au RGAA
+
+.lien-evitement {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0.75rem 1rem;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-weight: 500;
+  // Masqué visuellement tant qu'il n'a pas le focus, mais toujours lu par les lecteurs d'écran
+  transform: translateY(-100%);
+
+  &:focus {
+    transform: translateY(0);
+    outline: 3px solid var(--mat-sys-on-primary);
+    outline-offset: -3px;
+  }
+}
+
+.entete {
+  display: flex;
+  align-items: center;
+  min-height: 3.5rem;
+  padding: 0 1rem;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+}
+
+.entete__nom {
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.contenu {
+  padding: 1.5rem 1rem;
+
+  &:focus {
+    outline: none; // le focus est déplacé ici par le lien d'évitement, sans cadre superflu
+  }
+}
