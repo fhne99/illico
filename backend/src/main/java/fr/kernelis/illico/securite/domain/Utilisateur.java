@@ -91,6 +91,27 @@ public class Utilisateur {
         return identifiant.strip().toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Active le compte avec son mot de passe (déjà haché) et le secret de son second facteur.
+     * Appelé par le parcours d'activation d'US-07 ; utilisé dès maintenant pour préparer les tests.
+     */
+    public void activer(String motDePasseHache, String secretTotp) {
+        if (statut != StatutCompte.EN_ATTENTE_ACTIVATION) {
+            throw new IllegalStateException("Seul un compte en attente d'activation peut être activé");
+        }
+        if (motDePasseHache == null || motDePasseHache.isBlank() || secretTotp == null || secretTotp.isBlank()) {
+            throw new IllegalArgumentException("Le mot de passe et le second facteur sont obligatoires");
+        }
+        this.motDePasseHache = motDePasseHache;
+        this.secretTotp = secretTotp;
+        this.statut = StatutCompte.ACTIF;
+    }
+
+    /** Seul un compte actif, doté d'un mot de passe, peut tenter une connexion. */
+    public boolean peutSeConnecter() {
+        return statut == StatutCompte.ACTIF && motDePasseHache != null;
+    }
+
     @PrePersist
     void avantCreation() {
         Instant maintenant = Instant.now();
