@@ -67,4 +67,17 @@ class UtilisateurTest {
             .isInstanceOf(IllegalArgumentException.class);
         assertThat(utilisateur.peutSeConnecter()).isFalse();
     }
+    /** Le pas mémorisé est ce qui empêche un code déjà utilisé de resservir. */
+    @Test
+    void une_connexion_reussie_memorise_le_code_utilise_et_l_heure_de_connexion() {
+        Utilisateur utilisateur = Utilisateur.creer(IDENTIFIANT, Role.GESTIONNAIRE);
+        utilisateur.activer("{argon2}empreinte", "JBSWY3DPEHPK3PXP");
+        java.time.Instant instant = java.time.Instant.parse("2027-02-01T09:00:00Z");
+
+        utilisateur.enregistrerConnexionReussie(56_560_000L, instant);
+
+        assertThat(utilisateur.getDernierPasTotp()).isEqualTo(56_560_000L);
+        assertThat(utilisateur.getDerniereConnexion()).isEqualTo(instant);
+        assertThat(utilisateur.getEchecsConsecutifs()).isZero();
+    }
 }

@@ -1,5 +1,7 @@
 package fr.kernelis.illico.securite.config;
 
+import java.time.Clock;
+import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -10,10 +12,11 @@ import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-
-import java.util.Map;
 
 @Configuration
 public class SecurityConfig {
@@ -26,23 +29,35 @@ public class SecurityConfig {
     private static final int ARGON2_ITERATIONS = 2;
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextRepository depotContexte) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/connexion").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/connexion", "/api/auth/second-facteur").permitAll()
                 // La page d'erreur doit rester accessible, sinon une erreur 400 deviendrait une 401
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated())
+            // La session connectée est conservée côté serveur ; le navigateur ne reçoit qu'un cookie de session
+            .securityContext(contexte -> contexte.securityContextRepository(depotContexte))
             // Jeton CSRF dans un cookie lisible par Angular, qui le renvoie dans l'en-tête X-XSRF-TOKEN
             .csrf(csrf -> csrf
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+            // Déconnexion côté serveur : la session est invalidée, pas seulement le cookie effacé
+            .logout(deconnexion -> deconnexion
+                .logoutUrl("/api/auth/deconnexion")
+                .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
+                .deleteCookies("JSESSIONID"))
             // Une API consommée par l'application Angular répond 401, sans redirection vers une page de connexion
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
         return http.build();
+    }
+
+    @Bean
+    SecurityContextRepository depotContexteSecurite() {
+        return new HttpSessionSecurityContextRepository();
     }
 
     /**
@@ -54,5 +69,11 @@ public class SecurityConfig {
         Argon2PasswordEncoder argon2 = new Argon2PasswordEncoder(
             ARGON2_SEL_OCTETS, ARGON2_EMPREINTE_OCTETS, ARGON2_PARALLELISME, ARGON2_MEMOIRE_KIO, ARGON2_ITERATIONS);
         return new DelegatingPasswordEncoder("argon2", Map.of("argon2", argon2));
+    }
+
+    /** Horloge injectée plutôt qu'Instant.now() : le temps devient remplaçable dans les tests. */
+    @Bean
+    Clock horloge() {
+        return Clock.systemUTC();
     }
 }

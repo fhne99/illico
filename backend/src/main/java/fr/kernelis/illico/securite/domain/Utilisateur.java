@@ -112,6 +112,17 @@ public class Utilisateur {
         return statut == StatutCompte.ACTIF && motDePasseHache != null;
     }
 
+    /**
+     * Enregistre une connexion réussie : le pas du code accepté est mémorisé pour empêcher sa réutilisation,
+     * et le compteur d'échecs repart de zéro.
+     */
+    public void enregistrerConnexionReussie(long pasTotpAccepte, Instant instant) {
+        this.dernierPasTotp = pasTotpAccepte;
+        this.derniereConnexion = instant;
+        this.echecsConsecutifs = 0;
+        this.verrouilleJusqua = null;
+    }
+
     @PrePersist
     void avantCreation() {
         Instant maintenant = Instant.now();
