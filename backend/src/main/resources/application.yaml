@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: illico
+  datasource:
+    url: ${ILLICO_DB_URL:jdbc:postgresql://localhost:5432/illico}
+    username: ${ILLICO_DB_USER:illico}
+    password: ${ILLICO_DB_PASSWORD:illico_dev}
+  jpa:
+    hibernate:
+      ddl-auto: validate          # le schéma est géré uniquement par Flyway
+    open-in-view: false
+  flyway:
+    enabled: true
+  mail:
+    host: ${ILLICO_SMTP_HOST:localhost}
+    port: ${ILLICO_SMTP_PORT:1025}
+
+server:
+  error:
+    include-stacktrace: never     # aucune trace technique renvoyée au client
+    include-message: never
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        secure: true
+        same-site: strict
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  health:
+    mail:
+      enabled: false              # évite un état DOWN quand aucun serveur SMTP n'est joignable (tests, développement)

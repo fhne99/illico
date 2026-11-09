@@ -1,0 +1,17 @@
+# Back-end
+backend/target/
+*.class
+# Front-end
+frontend-ajouts/node_modules/
+frontend-ajouts/dist/
+frontend-ajouts/coverage/
+frontend-ajouts/test-results/
+frontend-ajouts/playwright-report/
+# IDE et système
+.idea/
+.vscode/
+*.iml
+.DS_Store
+# Secrets locaux
+.env
+*.local.yml

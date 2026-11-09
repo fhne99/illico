@@ -1,0 +1,106 @@
+name: Intégration continue
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: "25"     # dernière version LTS de Java ; aligner sur le choix fait dans Spring Initializr
+  NODE_VERSION: "22"     # version LTS compatible avec Angular ; à vérifier à la création du projet
+
+jobs:
+  back-end:
+    name: Back-end (tests, couverture, qualité)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # historique complet pour l'analyse du nouveau code par SonarQube
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      # Tests unitaires, d'architecture et d'intégration (Testcontainers utilise le Docker du runner),
+      # puis contrôle du seuil de couverture JaCoCo : le build échoue sous le seuil.
+      - name: Tests et couverture
+        run: ./mvnw -B verify
+      - name: Rapport de couverture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: couverture-back-end
+          path: backend/target/site/jacoco/
+      - name: Analyse SonarQube
+        if: env.SONAR_TOKEN != ''
+        run: >
+          ./mvnw -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.host.url=${{ vars.SONAR_HOST_URL }}
+          -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+
+  front-end:
+    name: Front-end (lint, tests, couverture, qualité)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Tests unitaires et couverture
+        run: npm run test:ci
+      - name: Build de production
+        run: npm run build
+      - name: Analyse SonarQube
+        if: env.SONAR_TOKEN != ''
+        uses: SonarSource/sonarqube-scan-action@v5
+        with:
+          projectBaseDir: frontend
+          args: -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+        env:
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+
+  bout-en-bout:
+    name: Bout en bout et accessibilité
+    needs: front-end
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Tests Playwright et axe-core
+        run: npx playwright test --project=ordinateur --project=mobile
+      - name: Rapport Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-playwright
+          path: frontend/playwright-report/

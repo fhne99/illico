@@ -1,0 +1,94 @@
+id,titre,user_story,criteres_acceptation,fonction,moscow,sprint,points
+US-01,Connexion sécurisée avec authentification forte,"En tant qu'agent ou technicien, je veux me connecter avec un mot de passe et un second facteur afin que personne d'autre ne puisse accéder aux données des locataires.","Étant donné un compte agent ou technicien actif, quand je saisis mon identifiant, mon mot de passe et un code à usage unique valide, alors j'accède à mon espace.
+Étant donné un code à usage unique invalide, quand je valide, alors l'accès est refusé et la tentative est journalisée.
+Étant donné 5 échecs consécutifs, quand je tente une nouvelle connexion, alors le compte est temporairement verrouillé.
+La session est portée par un cookie sécurisé (HttpOnly, Secure, SameSite) et aucun jeton n'est stocké dans le navigateur.",FS1 Sécuriser l'accès et les données,Must,Conception,5
+US-02,Rôles et permissions,"En tant qu'administrateur, je veux attribuer un rôle à chaque utilisateur afin que chacun n'accède qu'aux fonctions de son métier.","Les rôles disponibles sont : locataire, gestionnaire, responsable de résidence, technicien, administrateur.
+Étant donné un utilisateur sans le rôle requis, quand il appelle une fonction protégée, alors l'API répond 403 et l'interface masque la fonction.
+Chaque règle d'autorisation est couverte par un test automatisé.",FS1 Sécuriser l'accès et les données,Must,Sprint 1,5
+US-03,Cloisonnement par résidence et par prestataire,"En tant que responsable du service technique, je veux que chaque utilisateur ne voie que son périmètre afin de protéger les données des locataires.","Étant donné un responsable de résidence, quand il consulte les demandes, alors il ne voit que celles de sa résidence.
+Étant donné un technicien de prestataire, quand il consulte ses interventions, alors il ne voit que celles affectées à son entreprise.
+Étant donné un locataire, quand il modifie l'identifiant d'une demande dans l'URL, alors l'API répond 404 sans révéler l'existence de la demande.",FS1 Sécuriser l'accès et les données,Must,Sprint 1,5
+US-04,Journal d'audit,"En tant que DPO, je veux que chaque consultation et modification de données personnelles soit tracée afin de pouvoir contrôler les accès.","Chaque consultation de fiche locataire et chaque modification de demande crée une entrée : auteur, date, action, objet concerné.
+Le journal n'est consultable que par l'administrateur et ne peut pas être modifié depuis l'application.
+Le journal est conservé selon la durée définie avec le DPO.",FS1 Sécuriser l'accès et les données,Must,Sprint 1,3
+US-05,Export et suppression des données d'un locataire,"En tant qu'administrateur, je veux exporter ou supprimer les données d'un locataire afin de répondre à ses demandes d'exercice de droits RGPD.","Étant donné un locataire, quand je lance l'export, alors j'obtiens un fichier lisible contenant ses données et l'historique de ses demandes.
+Étant donné une demande de suppression, quand je la valide, alors les données personnelles sont supprimées ou anonymisées et l'historique technique des interventions est conservé de façon anonyme.
+Chaque export et suppression est inscrit au journal d'audit.",FS1 Sécuriser l'accès et les données,Must,Sprint 1,3
+US-06,Import nocturne des logements et locataires,"En tant que gestionnaire, je veux que logements et locataires soient mis à jour chaque nuit depuis le logiciel de gestion locative afin de ne jamais les ressaisir.","Étant donné un fichier CSV conforme déposé, quand l'import s'exécute, alors les logements et locataires sont créés ou mis à jour.
+Étant donné un fichier vide, mal formé ou dont plus de 5 % des lignes sont en anomalie, quand l'import s'exécute, alors aucune donnée n'est modifiée et une alerte est envoyée.
+Un rapport d'import indique les lignes créées, mises à jour et rejetées.",FS2 Administrer le référentiel,Must,Sprint 1,8
+US-07,Gestion des utilisateurs,"En tant qu'administrateur, je veux créer, modifier et désactiver des comptes afin de gérer les accès des agents et techniciens.","Étant donné un nouvel agent, quand je crée son compte, alors il reçoit un lien d'activation à usage unique.
+Étant donné un compte désactivé, quand son titulaire tente de se connecter, alors l'accès est refusé.
+Les comptes inactifs depuis 90 jours sont signalés à l'administrateur.",FS2 Administrer le référentiel,Must,Sprint 1,3
+US-08,Gestion des entreprises prestataires,"En tant qu'administrateur, je veux enregistrer les entreprises prestataires, leurs corps de métier et leurs techniciens afin de pouvoir leur affecter des interventions.","Une entreprise a un nom, des corps de métier et un délai d'intervention contractuel par niveau d'urgence.
+Étant donné une entreprise dont le contrat prend fin, quand je la désactive, alors tous ses comptes techniciens sont désactivés.
+Un technicien est rattaché soit à la régie, soit à une seule entreprise.",FS2 Administrer le référentiel,Must,Sprint 1,3
+US-09,Activation du compte locataire,"En tant que locataire, je veux activer mon compte en ligne avec un code fourni par mon bailleur afin de suivre mes demandes.","Étant donné un code valide associé à mon logement, quand je l'utilise, alors je crée mon mot de passe et mon compte est actif.
+Étant donné un code déjà utilisé ou expiré, quand je l'utilise, alors l'activation est refusée avec un message clair.
+Un locataire sans compte reste pleinement géré dans Illico.",FP1 Recueillir les demandes,Must,Sprint 2,3
+US-10,Signalement d'une panne en ligne,"En tant que locataire, je veux signaler une panne avec une description, une catégorie, une urgence et des photos afin qu'elle soit prise en charge sans téléphoner.","Étant donné un locataire connecté, quand il remplit le formulaire en trois écrans au plus, alors la demande est créée avec le canal « application ».
+La catégorie et l'urgence sont choisies dans des listes ; les créneaux de disponibilité sont facultatifs.
+Le formulaire est utilisable au clavier et avec un lecteur d'écran (critères RGAA).
+Le locataire reçoit un numéro de demande à l'écran et par mail s'il en a un.",FP1 Recueillir les demandes,Must,Sprint 2,8
+US-11,Saisie pour le compte d'un locataire,"En tant que chargé de clientèle ou responsable de résidence, je veux saisir une demande pour un locataire qui m'appelle ou vient me voir afin qu'elle soit suivie comme une demande en ligne.","Étant donné un appel, quand je recherche le locataire par nom ou adresse, alors je crée la demande sur son logement en indiquant le canal (téléphone, accueil, responsable de résidence).
+Étant donné un responsable de résidence, quand il recherche un locataire, alors seuls ceux de sa résidence sont proposés.
+La préférence de contact du locataire (mail, téléphone, courrier) est affichée et modifiable.",FP1 Recueillir les demandes,Must,Sprint 2,5
+US-12,Signalement d'une partie commune,"En tant que responsable de résidence, je veux signaler une panne dans une partie commune afin qu'elle soit réparée sans attendre qu'un locataire appelle.","Étant donné une résidence, quand je crée une demande, alors je peux la rattacher à une partie commune (hall, ascenseur, escalier, parking, extérieurs) au lieu d'un logement.
+La demande apparaît dans le tableau des gestionnaires avec l'indication « partie commune ».",FP1 Recueillir les demandes,Must,Sprint 2,3
+US-13,Dépôt de photos sécurisé,"En tant que responsable de la sécurité du projet, je veux que les photos déposées soient contrôlées afin d'éviter tout fichier malveillant et toute fuite de localisation.","Seuls les formats JPEG, PNG et HEIC de moins de 10 Mo sont acceptés ; le type est vérifié sur le contenu du fichier, pas sur son extension.
+Chaque image est ré-encodée, compressée et débarrassée de ses métadonnées (dont la géolocalisation).
+Les fichiers sont stockés hors du serveur web, dans le stockage objet, et ne sont accessibles qu'aux utilisateurs autorisés.",FP1 Recueillir les demandes,Must,Sprint 2,5
+US-14,Suivi de ses demandes par le locataire,"En tant que locataire, je veux voir où en est ma demande afin de ne plus avoir à relancer.","Étant donné un locataire connecté, quand il ouvre une demande, alors il voit son statut, la date d'intervention prévue et l'étape en cours (par exemple étape 2 sur 3).
+L'historique des changements de statut est affiché du plus récent au plus ancien.
+Le locataire ne voit jamais les commentaires internes ni les coordonnées des techniciens.",FP4 Informer le locataire,Must,Sprint 2,3
+US-15,Notifications de changement de statut,"En tant que locataire, je veux être prévenu à chaque étape de ma demande afin d'être informé sans me connecter.","Étant donné un locataire dont la préférence est le mail, quand le statut change, alors il reçoit un mail sans données sensibles et avec un lien vers sa demande.
+Étant donné un locataire dont la préférence est le téléphone, quand le statut change, alors une tâche « appeler le locataire » apparaît pour le gestionnaire.
+Les envois en échec sont tracés et relancés.",FP4 Informer le locataire,Must,Sprint 4,3
+US-16,Rappel la veille de l'intervention,"En tant que locataire, je veux recevoir un rappel la veille du rendez-vous afin d'être présent.","Étant donné une intervention planifiée, quand la veille arrive à 18 h, alors un rappel est envoyé selon la préférence de contact.
+Le taux d'absence est calculé à partir des interventions marquées « locataire absent ».",FP4 Informer le locataire,Should,Sprint 4,2
+US-17,Fil de commentaires sur une demande,"En tant que locataire ou gestionnaire, je veux échanger des messages sur une demande afin de préciser un accès ou une information sans passer par le téléphone.","Étant donné une demande, quand j'ajoute un commentaire, alors il apparaît dans le fil avec son auteur et sa date.
+Un gestionnaire peut marquer un commentaire comme interne : il est alors invisible pour le locataire.
+Le contenu des commentaires est échappé pour empêcher toute injection de script.",FP4 Informer le locataire,Should,Sprint 2,3
+US-18,Confirmation de résolution et satisfaction,"En tant que locataire, je veux confirmer que le problème est résolu et donner mon avis afin que la demande soit close à juste titre.","Étant donné que toutes les interventions sont terminées, quand le locataire confirme, alors la demande est close et il peut donner une note de 1 à 5.
+Étant donné que le locataire signale que le problème persiste, quand il valide, alors la demande est rouverte et le gestionnaire est alerté.
+Sans réponse sous 7 jours, la demande est close automatiquement.",FP4 Informer le locataire,Should,Sprint 4,3
+US-19,Tableau des demandes,"En tant que gestionnaire, je veux voir toutes les demandes et les filtrer afin de savoir quoi traiter en priorité.","Le tableau affiche numéro, logement ou partie commune, catégorie, urgence, statut, âge et délai restant.
+Les filtres disponibles sont : statut, urgence, résidence, canal, intervenant, délai dépassé.
+Le tableau reste utilisable avec 5 000 demandes (pagination côté serveur, réponse en moins d'une seconde).",FP2 Coordonner les interventions,Must,Sprint 3,5
+US-20,Qualification d'une demande,"En tant que gestionnaire, je veux corriger la catégorie et fixer la priorité d'une demande afin qu'elle parte vers le bon intervenant.","Étant donné une nouvelle demande, quand je la qualifie, alors je peux modifier sa catégorie et son urgence, et son statut passe à « qualifiée ».
+Toute modification est historisée.",FP2 Coordonner les interventions,Must,Sprint 3,3
+US-21,Regroupement des doublons,"En tant que gestionnaire, je veux regrouper les demandes qui signalent la même panne afin de ne déclencher qu'une intervention.","Étant donné plusieurs demandes d'une même résidence et d'une même catégorie sous 48 h, quand j'ouvre l'une d'elles, alors Illico me suggère les doublons possibles.
+Étant donné un regroupement, quand la demande principale évolue, alors tous les locataires concernés sont informés.",FP2 Coordonner les interventions,Should,Sprint 3,3
+US-22,Interventions multiples ordonnées,"En tant que gestionnaire, je veux découper une demande en plusieurs interventions par corps de métier afin de coordonner une réparation qui en demande plusieurs.","Étant donné une demande, quand j'ajoute des interventions, alors chacune a un corps de métier et un ordre (par exemple plombier, puis plaquiste, puis peintre).
+Étant donné une intervention non terminée, quand je veux planifier la suivante, alors Illico m'en empêche.
+La demande n'est proposée à la clôture que lorsque toutes ses interventions sont terminées.",FP2 Coordonner les interventions,Must,Sprint 3,8
+US-23,Affectation et planification,"En tant que gestionnaire, je veux affecter une intervention à la régie ou à un prestataire et fixer une date afin qu'elle soit réalisée.","Étant donné une intervention, quand je choisis un intervenant, alors seuls ceux du corps de métier concerné sont proposés.
+Étant donné une date choisie, quand je valide, alors le bon d'intervention est envoyé à l'intervenant et le locataire est notifié.",FP2 Coordonner les interventions,Must,Sprint 3,5
+US-24,Délais selon l'urgence,"En tant que responsable du service technique, je veux que chaque demande ait un délai selon son urgence afin que les urgences ne soient jamais oubliées.","Chaque niveau d'urgence a un délai paramétrable (par exemple 24 h pour une fuite d'eau, 30 jours pour une demande courante).
+Étant donné une demande dont le délai est dépassé, quand le gestionnaire ouvre le tableau, alors elle apparaît en alerte en tête de liste.",FP2 Coordonner les interventions,Must,Sprint 3,3
+US-25,Rappels promis au locataire,"En tant que chargé de clientèle, je veux enregistrer un rappel promis avec une échéance afin de ne plus oublier de rappeler un locataire.","Étant donné une demande, quand je crée un rappel, alors il a une échéance, un responsable et le statut « à faire ».
+Étant donné un rappel dont l'échéance est dépassée, quand son responsable ouvre Illico, alors il est affiché en alerte.
+Le taux de rappels effectués dans le délai est calculé.",FP2 Coordonner les interventions,Must,Sprint 3,3
+US-26,Interventions du jour sur mobile,"En tant que technicien, je veux voir mes interventions du jour sur mon téléphone afin d'organiser ma tournée.","Étant donné un technicien connecté sur smartphone, quand il ouvre Illico, alors il voit ses interventions du jour triées par heure avec adresse, accès et description.
+L'affichage est lisible et utilisable d'une main sur un écran de 360 pixels de large.
+L'application est installable sur l'écran d'accueil (PWA).",FP3 Prouver l'intervention,Must,Sprint 4,3
+US-27,Mise à jour du statut d'une intervention,"En tant que technicien, je veux indiquer l'avancement de mon intervention afin que le gestionnaire et le locataire soient informés.","Les statuts disponibles sont : en cours, terminée, en attente de pièce.
+Étant donné le statut « en attente de pièce », quand je le valide, alors je dois saisir un commentaire et le gestionnaire est alerté.",FP3 Prouver l'intervention,Must,Sprint 4,2
+US-28,Compte rendu d'intervention,"En tant que technicien, je veux décrire les travaux réalisés et ajouter une photo afin de garder une trace de mon intervention.","Étant donné une intervention en cours, quand je la termine, alors je dois saisir les travaux réalisés et je peux ajouter jusqu'à 3 photos prises depuis le téléphone.
+Les photos suivent les mêmes contrôles que le dépôt par le locataire.",FP3 Prouver l'intervention,Must,Sprint 4,3
+US-29,Signature du locataire,"En tant que technicien, je veux faire signer le locataire sur mon téléphone afin de prouver mon passage.","Étant donné une intervention terminée, quand le locataire signe du doigt, alors la signature est enregistrée avec la date, l'heure et l'identité du technicien.
+La signature ne peut plus être modifiée une fois validée.
+La zone de signature est assez grande pour une personne âgée et propose un bouton « effacer ».",FP3 Prouver l'intervention,Must,Sprint 4,5
+US-30,Gestion de l'absence du locataire,"En tant que technicien, je veux signaler que le locataire est absent afin que l'intervention soit reprogrammée.","Étant donné un locataire absent, quand je le signale avec un commentaire ou une photo, alors l'intervention passe au statut « à reprogrammer » et le gestionnaire est alerté.
+L'absence est comptabilisée pour l'indicateur de taux d'absence.",FP3 Prouver l'intervention,Must,Sprint 4,3
+US-31,Rapport d'intervention en PDF,"En tant que responsable du service technique, je veux un rapport PDF signé pour chaque intervention afin de contrôler le travail avant le paiement du prestataire.","Étant donné une intervention signée, quand elle est validée, alors un PDF est généré avec la demande, les travaux, les photos, la signature, la date et le technicien.
+Une empreinte numérique (SHA-256) du PDF est enregistrée pour prouver qu'il n'a pas été modifié.
+Le PDF est accessible aux gestionnaires et au prestataire concerné uniquement.",FP3 Prouver l'intervention,Must,Sprint 4,5
+US-32,Contrôle de santé et métriques,"En tant qu'exploitant, je veux que l'application expose son état de santé et ses métriques afin d'être alerté avant les utilisateurs.","Un point de contrôle indique si l'API, la base de données et le stockage objet répondent.
+Les métriques techniques (temps de réponse, erreurs, mémoire) sont exposées sans être publiques.
+Les erreurs non gérées sont envoyées automatiquement à l'outil de suivi des erreurs.",FS3 Exploiter le service,Must,Conception,2
+US-33,Activation progressive des fonctionnalités,"En tant que cheffe de projet, je veux activer une nouvelle fonctionnalité pour une seule résidence afin de la tester avant de la généraliser.","Étant donné une fonctionnalité protégée par un interrupteur, quand je l'active pour une résidence, alors seuls ses utilisateurs y ont accès.
+Les interrupteurs sont modifiables par l'administrateur sans redéploiement.",FS3 Exploiter le service,Should,Conception,3
+US-34,Signaler un problème dans l'application,"En tant qu'utilisateur, je veux signaler un problème rencontré dans Illico afin qu'il soit corrigé.","Étant donné un utilisateur connecté, quand il clique sur « Signaler un problème », alors il décrit le problème et Illico joint automatiquement la page, la version et la date.
+Le signalement crée un ticket de support et l'utilisateur reçoit un accusé de réception.",FS3 Exploiter le service,Should,Sprint 4,2

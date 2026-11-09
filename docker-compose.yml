@@ -1,0 +1,47 @@
+# Environnement de développement local d'Illico.
+#   docker compose up -d                      -> base, stockage objet, mails
+#   docker compose --profile qualite up -d    -> ajoute SonarQube
+services:
+  postgres:
+    image: postgres:17-alpine            # même version qu'en test (Testcontainers) et en production
+    environment:
+      POSTGRES_DB: illico
+      POSTGRES_USER: illico
+      POSTGRES_PASSWORD: illico_dev      # mot de passe de développement uniquement
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  stockage:
+    # Stockage objet compatible S3 (remplace MinIO, dont les images ne sont plus publiées)
+    image: chrislusf/seaweedfs
+    command: server -s3 -dir=/data -s3.port=8333
+    ports:
+      - "8333:8333"   # API S3
+      - "9333:9333"   # page d'état : http://localhost:9333
+    volumes:
+      - stockage-data:/data
+
+  mails:
+    image: axllent/mailpit               # capture tous les mails envoyés en développement
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # interface web : http://localhost:8025
+
+  sonarqube:
+    image: sonarqube:community
+    profiles: ["qualite"]
+    ports:
+      - "9002:9000"   # http://localhost:9002 (9000 est pris par le stockage objet)
+    volumes:
+      - sonarqube-data:/opt/sonarqube/data
+      - sonarqube-extensions:/opt/sonarqube/extensions
+      - sonarqube-logs:/opt/sonarqube/logs
+
+volumes:
+  postgres-data:
+  stockage-data:
+  sonarqube-data:
+  sonarqube-extensions:
+  sonarqube-logs:
