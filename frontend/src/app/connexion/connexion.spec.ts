@@ -102,4 +102,18 @@ describe('Page de connexion', () => {
 
     expect(TestBed.inject(Router).url).toBe('/espace');
   });
+
+  it('annonce un code refusé et vide le champ pour une nouvelle saisie', async () => {
+    await validerLaPremiereEtape();
+    saisir('#code', '000000');
+    envoyerLeFormulaire();
+
+    http
+      .expectOne('/api/auth/second-facteur')
+      .flush({ etape: 'REFUSEE', message: 'Code incorrect ou expiré' }, { status: 401, statusText: 'Unauthorized' });
+    await rafraichir();
+
+    expect(page().querySelector('[role="alert"]')?.textContent).toContain('Code incorrect ou expiré');
+    expect(page().querySelector<HTMLInputElement>('#code')?.value).toBe('');
+  });
 });

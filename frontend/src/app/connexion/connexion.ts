@@ -80,7 +80,7 @@ export class Connexion {
     this.auth.secondFacteur(this.verification.getRawValue().code).subscribe((reponse) => {
       this.envoiEnCours.set(false);
       if (reponse.etape === 'CONNECTE') {
-        this.router.navigateByUrl('/espace');
+        void this.router.navigateByUrl('/espace');
       } else {
         this.verification.reset();
         this.signalerErreur(reponse.message);

@@ -13,6 +13,8 @@ export class Espace {
   private readonly router = inject(Router);
 
   protected seDeconnecter(): void {
-    this.auth.deconnexion().subscribe(() => this.router.navigateByUrl('/'));
+    this.auth.deconnexion().subscribe(() => {
+      void this.router.navigateByUrl('/');
+    });
   }
 }
