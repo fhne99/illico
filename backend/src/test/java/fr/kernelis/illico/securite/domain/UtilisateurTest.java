@@ -80,4 +80,60 @@ class UtilisateurTest {
         assertThat(utilisateur.getDerniereConnexion()).isEqualTo(instant);
         assertThat(utilisateur.getEchecsConsecutifs()).isZero();
     }
+    private static final java.time.Instant T0 = java.time.Instant.parse("2027-02-01T09:00:00Z");
+
+    private static Utilisateur compteActifPourTest() {
+        Utilisateur utilisateur = Utilisateur.creer(IDENTIFIANT, Role.GESTIONNAIRE);
+        utilisateur.activer("{argon2}empreinte", "JBSWY3DPEHPK3PXP");
+        return utilisateur;
+    }
+
+    private static void echouer(Utilisateur utilisateur, int fois) {
+        for (int i = 0; i < fois; i++) {
+            utilisateur.enregistrerEchec(T0);
+        }
+    }
+
+    @Test
+    void quatre_echecs_consecutifs_ne_verrouillent_pas_le_compte() {
+        Utilisateur utilisateur = compteActifPourTest();
+
+        echouer(utilisateur, 4);
+
+        assertThat(utilisateur.estVerrouille(T0)).isFalse();
+    }
+
+    @Test
+    void le_cinquieme_echec_verrouille_le_compte_pendant_quinze_minutes() {
+        Utilisateur utilisateur = compteActifPourTest();
+
+        echouer(utilisateur, 5);
+
+        assertThat(utilisateur.estVerrouille(T0.plusSeconds(15 * 60 - 1))).isTrue();
+        assertThat(utilisateur.estVerrouille(T0.plusSeconds(15 * 60))).isFalse();
+    }
+
+    /** Le seuil porte sur des échecs consécutifs : une connexion réussie efface les précédents. */
+    @Test
+    void une_connexion_reussie_remet_le_compteur_d_echecs_a_zero() {
+        Utilisateur utilisateur = compteActifPourTest();
+        echouer(utilisateur, 4);
+
+        utilisateur.enregistrerConnexionReussie(1L, T0);
+        echouer(utilisateur, 4);
+
+        assertThat(utilisateur.estVerrouille(T0)).isFalse();
+    }
+
+    /** Après un verrouillage, l'utilisateur retrouve cinq essais, pas un seul. */
+    @Test
+    void apres_la_fin_du_verrouillage_un_nouvel_echec_ne_reverrouille_pas_aussitot() {
+        Utilisateur utilisateur = compteActifPourTest();
+        echouer(utilisateur, 5);
+        java.time.Instant apresVerrouillage = T0.plus(Utilisateur.DUREE_VERROUILLAGE).plusSeconds(1);
+
+        utilisateur.enregistrerEchec(apresVerrouillage);
+
+        assertThat(utilisateur.estVerrouille(apresVerrouillage)).isFalse();
+    }
 }

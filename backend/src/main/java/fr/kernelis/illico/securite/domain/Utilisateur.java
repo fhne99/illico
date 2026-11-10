@@ -11,6 +11,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
@@ -28,6 +29,11 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // exigé par JPA, inaccessible au reste du code
 public class Utilisateur {
+
+    /** Nombre d'échecs consécutifs (mot de passe ou code) qui déclenche le verrouillage. */
+    public static final int SEUIL_ECHECS = 5;
+    /** Verrouillage temporaire plutôt que définitif : un attaquant ne peut pas bloquer un compte durablement. */
+    public static final Duration DUREE_VERROUILLAGE = Duration.ofMinutes(15);
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -110,6 +116,23 @@ public class Utilisateur {
     /** Seul un compte actif, doté d'un mot de passe, peut tenter une connexion. */
     public boolean peutSeConnecter() {
         return statut == StatutCompte.ACTIF && motDePasseHache != null;
+    }
+
+    /** Le compte refuse toute tentative, même correcte, jusqu'à la fin du verrouillage. */
+    public boolean estVerrouille(Instant maintenant) {
+        return verrouilleJusqua != null && maintenant.isBefore(verrouilleJusqua);
+    }
+
+    /**
+     * Enregistre un mot de passe ou un code faux. Au cinquième échec consécutif, le compte est verrouillé
+     * pour 15 minutes et le compteur repart de zéro : après le verrouillage, cinq nouveaux essais sont permis.
+     */
+    public void enregistrerEchec(Instant maintenant) {
+        this.echecsConsecutifs++;
+        if (echecsConsecutifs >= SEUIL_ECHECS) {
+            this.verrouilleJusqua = maintenant.plus(DUREE_VERROUILLAGE);
+            this.echecsConsecutifs = 0;
+        }
     }
 
     /**

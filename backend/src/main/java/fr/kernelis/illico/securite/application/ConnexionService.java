@@ -36,24 +36,40 @@ public class ConnexionService {
 
     /**
      * Première étape de la connexion.
+     * Un mot de passe faux compte comme un échec ; un compte verrouillé refuse même le bon mot de passe.
      *
-     * @return l'identifiant technique du compte si le mot de passe est correct pour un compte actif ;
+     * @return l'identifiant technique du compte si la connexion peut continuer ;
      *         vide sinon, sans distinguer les raisons du refus
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public Optional<UUID> verifierMotDePasse(String identifiant, String motDePasse) {
+        Instant maintenant = horloge.instant();
         Optional<Utilisateur> compte = normaliser(identifiant)
             .flatMap(depot::findByIdentifiant)
             .filter(Utilisateur::peutSeConnecter);
 
+        // Le mot de passe est toujours vérifié, même pour un compte inconnu ou verrouillé :
+        // le temps de réponse ne doit révéler ni l'existence du compte, ni son verrouillage
         String empreinte = compte.map(Utilisateur::getMotDePasseHache).orElse(empreinteFactice);
         boolean motDePasseCorrect = motDePasse != null && encodeur.matches(motDePasse, empreinte);
 
-        return compte.filter(utilisateur -> motDePasseCorrect).map(Utilisateur::getId);
+        if (compte.isEmpty()) {
+            return Optional.empty();
+        }
+        Utilisateur utilisateur = compte.get();
+        if (utilisateur.estVerrouille(maintenant)) {
+            return Optional.empty();
+        }
+        if (!motDePasseCorrect) {
+            utilisateur.enregistrerEchec(maintenant);
+            return Optional.empty();
+        }
+        return Optional.of(utilisateur.getId());
     }
 
     /**
      * Seconde étape : vérifie le code à usage unique et enregistre la connexion.
+     * Un code faux compte comme un échec, au même titre qu'un mot de passe faux.
      *
      * @param etape étape mot de passe conservée en session, ou null si elle n'a pas eu lieu
      * @return l'identité à placer en session si le code est valide ; vide sinon
@@ -66,10 +82,12 @@ public class ConnexionService {
         }
         return depot.findById(etape.utilisateurId())
             .filter(Utilisateur::peutSeConnecter)
+            .filter(utilisateur -> !utilisateur.estVerrouille(maintenant))
             .flatMap(utilisateur -> {
                 OptionalLong pasAccepte = Totp.verifier(
                     Base32.decoder(utilisateur.getSecretTotp()), code, maintenant, utilisateur.getDernierPasTotp());
                 if (pasAccepte.isEmpty()) {
+                    utilisateur.enregistrerEchec(maintenant);
                     return Optional.empty();
                 }
                 // Mémorise le pas du code : il ne pourra plus resservir (le verrou optimiste
