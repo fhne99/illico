@@ -8,7 +8,7 @@ import AxeBuilder from '@axe-core/playwright';
  */
 const ecrans = [
   { nom: 'accueil', chemin: '/' },
-  // { nom: 'connexion', chemin: '/connexion' },          // US-01
+  { nom: 'connexion', chemin: '/connexion' }, // US-01
   // { nom: 'signalement', chemin: '/demandes/nouvelle' }, // US-10
 ];
 

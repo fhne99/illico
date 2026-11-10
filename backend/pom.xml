@@ -21,7 +21,9 @@
     <jacoco.version>0.8.15</jacoco.version>
     <!-- Seuil de couverture des lignes : filet de sécurité, pas objectif -->
     <jacoco.couverture.minimale>0.70</jacoco.couverture.minimale>
-    <!-- Analyse SonarQube : adapter la clé à celle attribuée par SonarQube Cloud -->
+    <!-- Analyse SonarQube Cloud : la clé du projet est un identifiant public, pas un secret.
+         L'organisation est transmise par le pipeline (variable SONAR_ORGANIZATION),
+         et le jeton reste dans les secrets GitHub (SONAR_TOKEN). -->
     <sonar.projectKey>illico-backend</sonar.projectKey>
     <sonar.projectName>Illico - back-end</sonar.projectName>
     <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
@@ -65,6 +67,12 @@
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <scope>runtime</scope>
+    </dependency>
+    <!-- Hachage Argon2id des mots de passe par Spring Security -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk18on</artifactId>
+      <version>1.85.2</version>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>

@@ -1,0 +1,21 @@
+.espace {
+  max-width: 40rem;
+  color: var(--mat-sys-on-surface);
+  line-height: 1.5;
+}
+
+.bouton-principal {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 20px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 3px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
