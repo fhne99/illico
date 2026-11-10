@@ -1,7 +1,7 @@
 package fr.kernelis.illico.securite.application;
 
-import static fr.kernelis.illico.securite.ComptesDeTest.MOT_DE_PASSE;
-import static fr.kernelis.illico.securite.ComptesDeTest.compteActif;
+import static fr.kernelis.illico.securite.FabriqueDeComptes.MOT_DE_PASSE;
+import static fr.kernelis.illico.securite.FabriqueDeComptes.compteActif;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import fr.kernelis.illico.TestcontainersConfiguration;

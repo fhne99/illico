@@ -41,7 +41,7 @@ public class ConnexionService {
         this.encodeur = encodeur;
         this.horloge = horloge;
         this.journal = journal;
-        this.empreinteFactice = encodeur.encode("empreinte-factice-pour-egaliser-les-temps-de-reponse");
+        this.empreinteFactice = encodeur.encode(UUID.randomUUID().toString());
     }
 
     /**
