@@ -113,6 +113,20 @@ public class Utilisateur {
         this.statut = StatutCompte.ACTIF;
     }
 
+    /**
+     * Remplace le mot de passe d'un compte actif (empreinte déjà calculée).
+     * Servira à la réinitialisation du mot de passe ; utilisé dès maintenant par le compte de démonstration.
+     */
+    public void remplacerMotDePasse(String nouveauMotDePasseHache) {
+        if (statut != StatutCompte.ACTIF) {
+            throw new IllegalStateException("Seul un compte actif peut changer de mot de passe");
+        }
+        if (nouveauMotDePasseHache == null || nouveauMotDePasseHache.isBlank()) {
+            throw new IllegalArgumentException("Le mot de passe est obligatoire");
+        }
+        this.motDePasseHache = nouveauMotDePasseHache;
+    }
+
     /** Seul un compte actif, doté d'un mot de passe, peut tenter une connexion. */
     public boolean peutSeConnecter() {
         return statut == StatutCompte.ACTIF && motDePasseHache != null;

@@ -7,3 +7,13 @@
 .accueil__info {
   color: var(--mat-sys-on-surface-variant);
 }
+
+.accueil__lien {
+  color: var(--mat-sys-primary);
+  font-weight: 500;
+
+  &:focus-visible {
+    outline: 3px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}

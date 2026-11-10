@@ -145,4 +145,21 @@ class UtilisateurTest {
         assertThat(utilisateur.enregistrerEchec(T0)).isTrue();
         assertThat(utilisateur.enregistrerEchec(T0)).isFalse();
     }
+    @Test
+    void un_compte_actif_peut_changer_de_mot_de_passe() {
+        Utilisateur utilisateur = compteActifPourTest();
+
+        utilisateur.remplacerMotDePasse("{argon2}nouvelle-empreinte");
+
+        assertThat(utilisateur.getMotDePasseHache()).isEqualTo("{argon2}nouvelle-empreinte");
+    }
+
+    /** Un compte en attente d'activation reçoit son premier mot de passe par l'activation, pas autrement. */
+    @Test
+    void un_compte_non_active_ne_peut_pas_recevoir_de_mot_de_passe() {
+        Utilisateur utilisateur = Utilisateur.creer(IDENTIFIANT, Role.GESTIONNAIRE);
+
+        assertThatThrownBy(() -> utilisateur.remplacerMotDePasse("{argon2}empreinte"))
+            .isInstanceOf(IllegalStateException.class);
+    }
 }

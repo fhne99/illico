@@ -1,0 +1,84 @@
+<section class="connexion" aria-labelledby="titre-connexion">
+  <h1 id="titre-connexion">Connexion à Illico</h1>
+
+  @if (erreur(); as message) {
+    <!-- role="alert" : le message est lu aussitôt par les lecteurs d'écran (RGAA 7.5) -->
+    <div #resumeErreur class="connexion__erreur" role="alert" tabindex="-1">{{ message }}</div>
+  }
+
+  @if (etape() === 'mot-de-passe') {
+    <form [formGroup]="identifiants" (ngSubmit)="envoyerIdentifiants()" novalidate>
+      <p class="connexion__aide">Tous les champs sont obligatoires.</p>
+
+      <div class="champ">
+        <label for="identifiant">Identifiant (adresse électronique)</label>
+        <input
+          id="identifiant"
+          type="email"
+          formControlName="identifiant"
+          autocomplete="username"
+          required
+          [attr.aria-invalid]="champInvalide(identifiants, 'identifiant') || null"
+          [attr.aria-describedby]="champInvalide(identifiants, 'identifiant') ? 'identifiant-erreur' : null"
+        />
+        @if (champInvalide(identifiants, 'identifiant')) {
+          <p id="identifiant-erreur" class="champ__erreur">Saisissez votre identifiant.</p>
+        }
+      </div>
+
+      <div class="champ">
+        <label for="mot-de-passe">Mot de passe</label>
+        <div class="champ__groupe">
+          <input
+            id="mot-de-passe"
+            [type]="motDePasseVisible() ? 'text' : 'password'"
+            formControlName="motDePasse"
+            autocomplete="current-password"
+            required
+            [attr.aria-invalid]="champInvalide(identifiants, 'motDePasse') || null"
+            [attr.aria-describedby]="champInvalide(identifiants, 'motDePasse') ? 'mot-de-passe-erreur' : null"
+          />
+          <button
+            type="button"
+            class="bouton-secondaire"
+            [attr.aria-pressed]="motDePasseVisible()"
+            (click)="motDePasseVisible.set(!motDePasseVisible())"
+          >
+            Afficher le mot de passe
+          </button>
+        </div>
+        @if (champInvalide(identifiants, 'motDePasse')) {
+          <p id="mot-de-passe-erreur" class="champ__erreur">Saisissez votre mot de passe.</p>
+        }
+      </div>
+
+      <button type="submit" class="bouton-principal">Continuer</button>
+    </form>
+  } @else {
+    <form [formGroup]="verification" (ngSubmit)="envoyerCode()" novalidate>
+      <h2 #titreCode id="titre-code" tabindex="-1">Vérification en deux étapes</h2>
+      <p id="code-aide">Saisissez le code à 6 chiffres affiché dans votre application d’authentification.</p>
+
+      <div class="champ">
+        <label for="code">Code de vérification</label>
+        <input
+          id="code"
+          type="text"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          maxlength="6"
+          formControlName="code"
+          required
+          [attr.aria-invalid]="champInvalide(verification, 'code') || null"
+          [attr.aria-describedby]="champInvalide(verification, 'code') ? 'code-aide code-erreur' : 'code-aide'"
+        />
+        @if (champInvalide(verification, 'code')) {
+          <p id="code-erreur" class="champ__erreur">Le code est composé de 6 chiffres.</p>
+        }
+      </div>
+
+      <button type="submit" class="bouton-principal">Se connecter</button>
+      <button type="button" class="bouton-lien" (click)="recommencer()">Recommencer avec un autre compte</button>
+    </form>
+  }
+</section>

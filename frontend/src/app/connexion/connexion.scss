@@ -1,0 +1,99 @@
+// Couleurs issues du thème Angular Material : contrastes conformes au RGAA
+
+.connexion {
+  max-width: 28rem;
+  color: var(--mat-sys-on-surface);
+  line-height: 1.5;
+}
+
+.connexion__aide {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.connexion__erreur {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+
+  label {
+    font-weight: 500;
+  }
+
+  input {
+    padding: 0.6rem 0.75rem;
+    font: inherit;
+    color: var(--mat-sys-on-surface);
+    background: var(--mat-sys-surface);
+    border: 1px solid var(--mat-sys-outline);
+    border-radius: 4px;
+
+    &[aria-invalid='true'] {
+      border: 2px solid var(--mat-sys-error);
+    }
+  }
+}
+
+.champ__groupe {
+  display: flex;
+  gap: 0.5rem;
+
+  input {
+    flex: 1;
+  }
+}
+
+.champ__erreur {
+  margin: 0;
+  color: var(--mat-sys-error);
+}
+
+.bouton-principal,
+.bouton-secondaire,
+.bouton-lien {
+  font: inherit;
+  cursor: pointer;
+}
+
+.bouton-principal {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 20px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-weight: 500;
+}
+
+.bouton-secondaire {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--mat-sys-primary);
+}
+
+.bouton-lien {
+  display: block;
+  margin-top: 1rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--mat-sys-primary);
+  text-decoration: underline;
+}
+
+// Focus toujours visible au clavier (RGAA 10.7)
+input:focus-visible,
+button:focus-visible,
+[tabindex='-1']:focus {
+  outline: 3px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
