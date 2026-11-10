@@ -126,13 +126,17 @@ public class Utilisateur {
     /**
      * Enregistre un mot de passe ou un code faux. Au cinquième échec consécutif, le compte est verrouillé
      * pour 15 minutes et le compteur repart de zéro : après le verrouillage, cinq nouveaux essais sont permis.
+     *
+     * @return vrai si cet échec vient de verrouiller le compte
      */
-    public void enregistrerEchec(Instant maintenant) {
+    public boolean enregistrerEchec(Instant maintenant) {
         this.echecsConsecutifs++;
         if (echecsConsecutifs >= SEUIL_ECHECS) {
             this.verrouilleJusqua = maintenant.plus(DUREE_VERROUILLAGE);
             this.echecsConsecutifs = 0;
+            return true;
         }
+        return false;
     }
 
     /**

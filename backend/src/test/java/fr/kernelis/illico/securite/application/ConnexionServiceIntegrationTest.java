@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 class ConnexionServiceIntegrationTest {
 
     private static final String IDENTIFIANT = "sophie.martin@logis-estuaire.fr";
+    private static final String IP = "203.0.113.10";
 
     @Autowired
     private ConnexionService service;
@@ -35,33 +36,33 @@ class ConnexionServiceIntegrationTest {
     void le_bon_mot_de_passe_d_un_compte_actif_ouvre_la_seconde_etape() {
         Utilisateur compte = depot.saveAndFlush(compteActif(IDENTIFIANT, encodeur));
 
-        assertThat(service.verifierMotDePasse(IDENTIFIANT, MOT_DE_PASSE)).hasValue(compte.getId());
+        assertThat(service.verifierMotDePasse(IDENTIFIANT, MOT_DE_PASSE, IP)).hasValue(compte.getId());
     }
 
     @Test
     void l_identifiant_est_reconnu_quelle_que_soit_sa_casse() {
         Utilisateur compte = depot.saveAndFlush(compteActif(IDENTIFIANT, encodeur));
 
-        assertThat(service.verifierMotDePasse("  Sophie.MARTIN@logis-estuaire.fr", MOT_DE_PASSE)).hasValue(compte.getId());
+        assertThat(service.verifierMotDePasse("  Sophie.MARTIN@logis-estuaire.fr", MOT_DE_PASSE, IP)).hasValue(compte.getId());
     }
 
     @Test
     void un_mot_de_passe_faux_est_refuse() {
         depot.saveAndFlush(compteActif(IDENTIFIANT, encodeur));
 
-        assertThat(service.verifierMotDePasse(IDENTIFIANT, "un autre mot de passe")).isEmpty();
+        assertThat(service.verifierMotDePasse(IDENTIFIANT, "un autre mot de passe", IP)).isEmpty();
     }
 
     @Test
     void un_compte_inconnu_est_refuse() {
-        assertThat(service.verifierMotDePasse("inconnu@logis-estuaire.fr", MOT_DE_PASSE)).isEmpty();
+        assertThat(service.verifierMotDePasse("inconnu@logis-estuaire.fr", MOT_DE_PASSE, IP)).isEmpty();
     }
 
     @Test
     void un_compte_pas_encore_active_est_refuse() {
         depot.saveAndFlush(Utilisateur.creer(IDENTIFIANT, Role.GESTIONNAIRE));
 
-        assertThat(service.verifierMotDePasse(IDENTIFIANT, MOT_DE_PASSE)).isEmpty();
+        assertThat(service.verifierMotDePasse(IDENTIFIANT, MOT_DE_PASSE, IP)).isEmpty();
     }
 
     /** Garde-fou sur le choix de l'algorithme : un changement accidentel de configuration serait détecté. */

@@ -136,4 +136,13 @@ class UtilisateurTest {
 
         assertThat(utilisateur.estVerrouille(apresVerrouillage)).isFalse();
     }
+    /** Le verrouillage doit être signalé une fois, au moment précis où il se produit, pour être journalisé. */
+    @Test
+    void seul_l_echec_qui_declenche_le_verrouillage_le_signale() {
+        Utilisateur utilisateur = compteActifPourTest();
+        echouer(utilisateur, 4);
+
+        assertThat(utilisateur.enregistrerEchec(T0)).isTrue();
+        assertThat(utilisateur.enregistrerEchec(T0)).isFalse();
+    }
 }

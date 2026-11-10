@@ -51,7 +51,7 @@ class AuthentificationController {
     /** Première étape : identifiant et mot de passe. */
     @PostMapping("/connexion")
     ResponseEntity<ReponseConnexion> connexion(@Valid @RequestBody DemandeConnexion demande, HttpServletRequest requete) {
-        return connexionService.verifierMotDePasse(demande.identifiant(), demande.motDePasse())
+        return connexionService.verifierMotDePasse(demande.identifiant(), demande.motDePasse(), requete.getRemoteAddr())
             .map(utilisateurId -> {
                 requete.getSession(true);
                 // Nouvel identifiant de session : protège contre la fixation de session
@@ -72,7 +72,7 @@ class AuthentificationController {
             ? null
             : (EtapeMotDePasseValidee) session.getAttribute(ATTRIBUT_ETAPE_MOT_DE_PASSE);
 
-        return connexionService.verifierSecondFacteur(etape, demande.code())
+        return connexionService.verifierSecondFacteur(etape, demande.code(), requete.getRemoteAddr())
             .map(utilisateur -> {
                 session.removeAttribute(ATTRIBUT_ETAPE_MOT_DE_PASSE);
                 // Encore un nouvel identifiant de session, cette fois pour la session connectée

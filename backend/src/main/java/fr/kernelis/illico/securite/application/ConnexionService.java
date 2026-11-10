@@ -1,7 +1,14 @@
 package fr.kernelis.illico.securite.application;
 
+import static fr.kernelis.illico.securite.domain.TypeEvenementSecurite.CODE_REFUSE;
+import static fr.kernelis.illico.securite.domain.TypeEvenementSecurite.COMPTE_VERROUILLE;
+import static fr.kernelis.illico.securite.domain.TypeEvenementSecurite.CONNEXION_REUSSIE;
+import static fr.kernelis.illico.securite.domain.TypeEvenementSecurite.MOT_DE_PASSE_REFUSE;
+import static fr.kernelis.illico.securite.domain.TypeEvenementSecurite.TENTATIVE_SUR_COMPTE_VERROUILLE;
+
 import fr.kernelis.illico.securite.domain.Base32;
 import fr.kernelis.illico.securite.domain.Totp;
+import fr.kernelis.illico.securite.domain.TypeEvenementSecurite;
 import fr.kernelis.illico.securite.domain.Utilisateur;
 import fr.kernelis.illico.securite.infrastructure.UtilisateurRepository;
 import java.time.Clock;
@@ -19,6 +26,7 @@ public class ConnexionService {
     private final UtilisateurRepository depot;
     private final PasswordEncoder encodeur;
     private final Clock horloge;
+    private final JournalSecurite journal;
 
     /**
      * Empreinte calculée une fois au démarrage, vérifiée quand le compte n'existe pas :
@@ -27,10 +35,12 @@ public class ConnexionService {
      */
     private final String empreinteFactice;
 
-    public ConnexionService(UtilisateurRepository depot, PasswordEncoder encodeur, Clock horloge) {
+    public ConnexionService(UtilisateurRepository depot, PasswordEncoder encodeur, Clock horloge,
+                            JournalSecurite journal) {
         this.depot = depot;
         this.encodeur = encodeur;
         this.horloge = horloge;
+        this.journal = journal;
         this.empreinteFactice = encodeur.encode("empreinte-factice-pour-egaliser-les-temps-de-reponse");
     }
 
@@ -38,13 +48,15 @@ public class ConnexionService {
      * Première étape de la connexion.
      * Un mot de passe faux compte comme un échec ; un compte verrouillé refuse même le bon mot de passe.
      *
+     * @param adresseIp adresse de l'appelant, conservée dans le journal de sécurité
      * @return l'identifiant technique du compte si la connexion peut continuer ;
      *         vide sinon, sans distinguer les raisons du refus
      */
     @Transactional
-    public Optional<UUID> verifierMotDePasse(String identifiant, String motDePasse) {
+    public Optional<UUID> verifierMotDePasse(String identifiant, String motDePasse, String adresseIp) {
         Instant maintenant = horloge.instant();
-        Optional<Utilisateur> compte = normaliser(identifiant)
+        Optional<String> identifiantNormalise = normaliser(identifiant);
+        Optional<Utilisateur> compte = identifiantNormalise
             .flatMap(depot::findByIdentifiant)
             .filter(Utilisateur::peutSeConnecter);
 
@@ -53,15 +65,18 @@ public class ConnexionService {
         String empreinte = compte.map(Utilisateur::getMotDePasseHache).orElse(empreinteFactice);
         boolean motDePasseCorrect = motDePasse != null && encodeur.matches(motDePasse, empreinte);
 
+        String saisi = identifiantNormalise.orElse(null);
         if (compte.isEmpty()) {
+            journal.enregistrer(MOT_DE_PASSE_REFUSE, null, saisi, adresseIp, maintenant);
             return Optional.empty();
         }
         Utilisateur utilisateur = compte.get();
         if (utilisateur.estVerrouille(maintenant)) {
+            journal.enregistrer(TENTATIVE_SUR_COMPTE_VERROUILLE, utilisateur.getId(), saisi, adresseIp, maintenant);
             return Optional.empty();
         }
         if (!motDePasseCorrect) {
-            utilisateur.enregistrerEchec(maintenant);
+            enregistrerEchec(utilisateur, MOT_DE_PASSE_REFUSE, adresseIp, maintenant);
             return Optional.empty();
         }
         return Optional.of(utilisateur.getId());
@@ -75,27 +90,43 @@ public class ConnexionService {
      * @return l'identité à placer en session si le code est valide ; vide sinon
      */
     @Transactional
-    public Optional<UtilisateurConnecte> verifierSecondFacteur(EtapeMotDePasseValidee etape, String code) {
+    public Optional<UtilisateurConnecte> verifierSecondFacteur(EtapeMotDePasseValidee etape, String code,
+                                                               String adresseIp) {
         Instant maintenant = horloge.instant();
         if (etape == null || etape.estExpiree(maintenant)) {
+            journal.enregistrer(CODE_REFUSE, etape == null ? null : etape.utilisateurId(), null, adresseIp, maintenant);
             return Optional.empty();
         }
-        return depot.findById(etape.utilisateurId())
-            .filter(Utilisateur::peutSeConnecter)
-            .filter(utilisateur -> !utilisateur.estVerrouille(maintenant))
-            .flatMap(utilisateur -> {
-                OptionalLong pasAccepte = Totp.verifier(
-                    Base32.decoder(utilisateur.getSecretTotp()), code, maintenant, utilisateur.getDernierPasTotp());
-                if (pasAccepte.isEmpty()) {
-                    utilisateur.enregistrerEchec(maintenant);
-                    return Optional.empty();
-                }
-                // Mémorise le pas du code : il ne pourra plus resservir (le verrou optimiste
-                // de l'entité bloque aussi deux utilisations simultanées du même code)
-                utilisateur.enregistrerConnexionReussie(pasAccepte.getAsLong(), maintenant);
-                return Optional.of(new UtilisateurConnecte(
-                    utilisateur.getId(), utilisateur.getIdentifiant(), utilisateur.getRole()));
-            });
+        Optional<Utilisateur> compte = depot.findById(etape.utilisateurId()).filter(Utilisateur::peutSeConnecter);
+        if (compte.isEmpty()) {
+            journal.enregistrer(CODE_REFUSE, etape.utilisateurId(), null, adresseIp, maintenant);
+            return Optional.empty();
+        }
+        Utilisateur utilisateur = compte.get();
+        if (utilisateur.estVerrouille(maintenant)) {
+            journal.enregistrer(TENTATIVE_SUR_COMPTE_VERROUILLE, utilisateur.getId(),
+                utilisateur.getIdentifiant(), adresseIp, maintenant);
+            return Optional.empty();
+        }
+        OptionalLong pasAccepte = Totp.verifier(
+            Base32.decoder(utilisateur.getSecretTotp()), code, maintenant, utilisateur.getDernierPasTotp());
+        if (pasAccepte.isEmpty()) {
+            enregistrerEchec(utilisateur, CODE_REFUSE, adresseIp, maintenant);
+            return Optional.empty();
+        }
+        // Mémorise le pas du code : il ne pourra plus resservir (le verrou optimiste
+        // de l'entité bloque aussi deux utilisations simultanées du même code)
+        utilisateur.enregistrerConnexionReussie(pasAccepte.getAsLong(), maintenant);
+        journal.enregistrer(CONNEXION_REUSSIE, utilisateur.getId(), utilisateur.getIdentifiant(), adresseIp, maintenant);
+        return Optional.of(new UtilisateurConnecte(utilisateur.getId(), utilisateur.getIdentifiant(), utilisateur.getRole()));
+    }
+
+    private void enregistrerEchec(Utilisateur utilisateur, TypeEvenementSecurite type, String adresseIp, Instant maintenant) {
+        journal.enregistrer(type, utilisateur.getId(), utilisateur.getIdentifiant(), adresseIp, maintenant);
+        boolean vientDEtreVerrouille = utilisateur.enregistrerEchec(maintenant);
+        if (vientDEtreVerrouille) {
+            journal.enregistrer(COMPTE_VERROUILLE, utilisateur.getId(), utilisateur.getIdentifiant(), adresseIp, maintenant);
+        }
     }
 
     private static Optional<String> normaliser(String identifiant) {

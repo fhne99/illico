@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 class VerrouillageIntegrationTest {
 
     private static final String IDENTIFIANT = "sophie.martin@logis-estuaire.fr";
+    private static final String IP = "203.0.113.10";
     private static final Instant T0 = Instant.parse("2027-02-01T09:00:00Z");
 
     @MockitoBean
@@ -59,19 +60,19 @@ class VerrouillageIntegrationTest {
     @Test
     void apres_cinq_mots_de_passe_faux_meme_le_bon_mot_de_passe_est_refuse() {
         IntStream.range(0, Utilisateur.SEUIL_ECHECS)
-            .forEach(i -> service.verifierMotDePasse(IDENTIFIANT, "un mot de passe faux"));
+            .forEach(i -> service.verifierMotDePasse(IDENTIFIANT, "un mot de passe faux", IP));
 
-        assertThat(service.verifierMotDePasse(IDENTIFIANT, MOT_DE_PASSE)).isEmpty();
+        assertThat(service.verifierMotDePasse(IDENTIFIANT, MOT_DE_PASSE, IP)).isEmpty();
     }
 
     @Test
     void le_verrouillage_est_leve_apres_quinze_minutes() {
         IntStream.range(0, Utilisateur.SEUIL_ECHECS)
-            .forEach(i -> service.verifierMotDePasse(IDENTIFIANT, "un mot de passe faux"));
+            .forEach(i -> service.verifierMotDePasse(IDENTIFIANT, "un mot de passe faux", IP));
 
         when(horloge.instant()).thenReturn(T0.plus(Utilisateur.DUREE_VERROUILLAGE));
 
-        assertThat(service.verifierMotDePasse(IDENTIFIANT, MOT_DE_PASSE)).hasValue(compte.getId());
+        assertThat(service.verifierMotDePasse(IDENTIFIANT, MOT_DE_PASSE, IP)).hasValue(compte.getId());
     }
 
     /** Sans cela, un attaquant qui connaît le mot de passe pourrait essayer les codes sans limite. */
@@ -80,10 +81,10 @@ class VerrouillageIntegrationTest {
         EtapeMotDePasseValidee etape = new EtapeMotDePasseValidee(compte.getId(), T0);
         String codeFaux = codeFauxAuMoment(T0);
 
-        IntStream.range(0, Utilisateur.SEUIL_ECHECS).forEach(i -> service.verifierSecondFacteur(etape, codeFaux));
+        IntStream.range(0, Utilisateur.SEUIL_ECHECS).forEach(i -> service.verifierSecondFacteur(etape, codeFaux, IP));
 
-        assertThat(service.verifierMotDePasse(IDENTIFIANT, MOT_DE_PASSE)).isEmpty();
-        assertThat(service.verifierSecondFacteur(etape, codeAuMoment(T0))).isEmpty();
+        assertThat(service.verifierMotDePasse(IDENTIFIANT, MOT_DE_PASSE, IP)).isEmpty();
+        assertThat(service.verifierSecondFacteur(etape, codeAuMoment(T0), IP)).isEmpty();
     }
 
     private String codeAuMoment(Instant instant) {

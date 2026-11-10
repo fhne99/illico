@@ -13,3 +13,4 @@ Règles :
 | [0002](0002-inversion-des-dependances-pour-les-services-externes.md) | Inversion des dépendances pour les services externes | Acceptée |
 | [0003](0003-authentification-par-session-serveur.md) | Authentification par session côté serveur (modèle BFF) | Acceptée |
 | [0004](0004-seaweedfs-a-la-place-de-minio.md) | SeaweedFS à la place de MinIO pour le stockage objet local | Acceptée |
+| [0005](0005-journal-des-evenements-de-securite.md) | Journal des événements de sécurité en base, en ajout seul | Acceptée |
